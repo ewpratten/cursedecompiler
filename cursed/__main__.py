@@ -23,16 +23,10 @@ def generateJarDownloadURL(file_id: int, name: Optional[str] = "unnamed") -> str
 def writeRemoteFileLocally(local_uri: str, url: str):
     os.system(f"wget {url} -O {local_uri}")
 
-    # resource = requests.get(url, headers={
-    #     "Accept": "application/java-archive"}, stream=True)
-    # resource.raw.decode_content = True
-
-    # with open(local_uri, "wb") as fp:
-    #     shutil.copyfileobj(resource.raw, fp)
-
 
 def main() -> int:
 
+    # Handle args
     ap = argparse.ArgumentParser(
         prog="cursed", description="A tool to decompile Minecraft mods straight from CurseForge")
     ap.add_argument("name", help="Mod name")
@@ -43,6 +37,7 @@ def main() -> int:
     ap.add_argument("-j", "--java", help="Path to custom Java")
     args = ap.parse_args()
 
+    # Determine Java path
     java_path: str
     if args.java:
         java_path = args.java
@@ -54,17 +49,21 @@ def main() -> int:
             java_path = os.path.expandvars("$JAVA_HOME/bin/java")
     print(f"Using Java: {java_path}")
 
+    # Create the workspace
     if not os.path.exists(f"{args.workspace}/{args.name}"):
         os.makedirs(f"{args.workspace}/{args.name}/source")
         print("Created workspace")
 
+    # Determine the location of the mod file
     download_url = generateJarDownloadURL(args.file_id, args.name)
     print(f"Found JAR at: {download_url}")
 
+    # Download the mod
     print("Downloading mod JAR")
     compiled_jar_path = f"{args.workspace}/{args.name}/{args.name}.jar"
     writeRemoteFileLocally(compiled_jar_path, download_url)
 
+    # Find FernFlower
     fernflower_path: str
     if not args.fernflower:
         fernflower_path = f"{args.workspace}/fernflower.jar"
@@ -77,12 +76,16 @@ def main() -> int:
         print("Using custom fernflower")
         fernflower_path = args.fernflower
 
+    # Decompile
     command = f"{java_path} -jar {fernflower_path} {compiled_jar_path} {args.workspace}/"
     print(f"{command}")
     status = os.system(command)
 
-    os.system(f"unzip -d{args.workspace}/{args.name}/source {args.workspace}/{args.name}.jar ")
+    # Extract
+    os.system(
+        f"unzip -d{args.workspace}/{args.name}/source {args.workspace}/{args.name}.jar ")
 
+    # Tell the user where to find their files
     if status == 0:
         print(
             f"Decompiled sources are in: {args.workspace}/{args.name}/source")
