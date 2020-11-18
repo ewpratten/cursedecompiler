@@ -1,2 +1,2 @@
 # cursedecompiler
-A tool to decompile Minecraft mods straight from CurseFurge
+A tool to decompile Minecraft mods straight from CurseForge
